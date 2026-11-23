@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La ruta de la cosecha · Intervalos</title>
+<style>
+:root{--bg:#f2f7ef;--fg:#1d2a22;--card:#ffffff;--accent:#0f7a6c;--grain:#e3a91d;--ok:#2f8f46;--bad:#c2452d;--mut:#6b7d70;--line:#cfdcc9;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14201a;--fg:#e8f0e6;--card:#1d2d25;--accent:#4fc3b0;--grain:#f0c04a;--ok:#5fcf7c;--bad:#ff8a6f;--mut:#9db0a2;--line:#33493c}}
+:root[data-theme="dark"]{--bg:#14201a;--fg:#e8f0e6;--card:#1d2d25;--accent:#4fc3b0;--grain:#f0c04a;--ok:#5fcf7c;--bad:#ff8a6f;--mut:#9db0a2;--line:#33493c}
+*{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font:17px/1.45 "Trebuchet MS",Verdana,sans-serif}
+main{max-width:560px;margin:0 auto;padding:16px}
+h1{font:700 26px/1.15 Georgia,"Times New Roman",serif;margin:8px 0 6px}
+h2{font:700 19px/1.2 Georgia,serif;margin:0 0 8px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:15px;color:var(--mut)}
+.bar{height:12px;border-radius:6px;background:var(--line);overflow:hidden;margin:8px 0 12px}
+.bar i{display:block;height:100%;background:var(--grain);transition:width .4s}
+button{font:inherit;cursor:pointer;border:2px solid var(--accent);background:var(--card);color:var(--fg);border-radius:10px;padding:12px 14px;width:100%;text-align:left;margin:6px 0;min-height:48px}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--grain);outline-offset:2px}
+button.go{background:var(--accent);color:#fff;text-align:center;font-weight:700}
+button.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 22%,var(--card))}
+button.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 22%,var(--card))}
+button:disabled{cursor:default}
+.opt{font-size:20px}
+svg{width:100%;height:auto;display:block}
+.fb{margin:10px 0;padding:10px 12px;border-left:6px solid var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--card));border-radius:6px}
+details{font-size:15px;margin:8px 0}summary{cursor:pointer;color:var(--accent);font-weight:700}
+input{font:inherit;width:100%;padding:10px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg)}
+.code{font-family:Consolas,monospace;background:var(--bg);border:2px dashed var(--accent);padding:10px;border-radius:8px;margin:8px 0;word-break:break-word}
+.big{font-size:44px;text-align:center;margin:4px 0}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+const R=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const SH=a=>a.slice().sort(()=>Math.random()-.5);
+const f=n=>n<0?'−'+(-n):''+n;
+const nt=v=>(v.a===null?'(−∞':(v.lc?'[':'(')+f(v.a))+', '+(v.b===null?'+∞)':f(v.b)+(v.rc?']':')'));
+const iq=v=>v.a===null?`x ${v.rc?'≤':'<'} ${f(v.b)}`:v.b===null?`x ${v.lc?'≥':'>'} ${f(v.a)}`:`${f(v.a)} ${v.lc?'≤':'<'} x ${v.rc?'≤':'<'} ${f(v.b)}`;
+const fin=()=>{const a=R(-5,8);return{a,b:a+R(2,7),lc:Math.random()<.5,rc:Math.random()<.5}};
+const ray=()=>Math.random()<.5?{a:R(-4,6),b:null,lc:Math.random()<.5,rc:false}:{a:null,b:R(-4,6),lc:false,rc:Math.random()<.5};
+function vars(v){const o=[],c=p=>o.push(Object.assign({},v,p));
+if(v.a!==null)c({lc:!v.lc});if(v.b!==null)c({rc:!v.rc});
+if(v.a!==null&&v.b!==null){c({lc:!v.lc,rc:!v.rc});c({a:v.a+1});c({b:v.b-1})}
+else if(v.b===null){c({a:null,b:v.a,lc:false,rc:v.lc});c({a:v.a+1})}
+else{c({a:v.b,b:null,lc:v.rc,rc:false});c({b:v.b-1})}
+return o}
+function opts(v,fn){const t=fn(v),s=[...new Set(vars(v).map(fn))].filter(x=>x!==t);return{o:SH([t,...SH(s).slice(0,3)]),t}}
+function line(v){const lo=v.a===null?v.b-5:v.a-2,hi=v.b===null?v.a+5:v.b+2,W=340,x=n=>20+(n-lo)/(hi-lo)*(W-40);
+let s=`<svg viewBox="0 0 ${W} 74" role="img" aria-label="Recta numérica con un intervalo marcado"><line x1="8" y1="38" x2="${W-8}" y2="38" stroke="var(--mut)" stroke-width="2"/>`;
+for(let n=lo;n<=hi;n++)s+=`<line x1="${x(n)}" y1="33" x2="${x(n)}" y2="43" stroke="var(--mut)"/><text x="${x(n)}" y="62" text-anchor="middle" font-size="11" fill="var(--fg)">${f(n)}</text>`;
+const xa=v.a===null?8:x(v.a),xb=v.b===null?W-8:x(v.b);
+s+=`<line x1="${xa}" y1="38" x2="${xb}" y2="38" stroke="var(--grain)" stroke-width="8" stroke-linecap="round"/>`;
+if(v.a===null)s+=`<polygon points="14,29 4,38 14,47" fill="var(--grain)"/>`;
+if(v.b===null)s+=`<polygon points="${W-14},29 ${W-4},38 ${W-14},47" fill="var(--grain)"/>`;
+if(v.a!==null)s+=`<circle cx="${xa}" cy="38" r="7" fill="${v.lc?'var(--accent)':'var(--card)'}" stroke="var(--accent)" stroke-width="3"/>`;
+if(v.b!==null)s+=`<circle cx="${xb}" cy="38" r="7" fill="${v.rc?'var(--accent)':'var(--card)'}" stroke="var(--accent)" stroke-width="3"/>`;
+return s+'</svg>'}
+const NOUN=[['La temperatura del cacao','°C'],['El peso de un saco de arroz','kg'],['La altura del agua en la acequia','cm'],['La edad de las plantas de plátano','meses']];
+function words(v){const a=v.a===null?'':f(v.a),b=v.b===null?'':f(v.b);
+if(v.a===null)return v.rc?`${b} o menos`:`menos de ${b}`;
+if(v.b===null)return v.lc?`${a} o más`:`más de ${a}`;
+if(v.lc&&v.rc)return `de ${a} a ${b}, ambos incluidos`;
+if(!v.lc&&!v.rc)return `mayores que ${a} y menores que ${b}`;
+if(v.lc)return `desde ${a} (incluido) hasta menos de ${b}`;
+return `más de ${a} y hasta ${b} (incluido)`}
+const LV=['Nivel 1 · Lee la recta','Nivel 1 · Lee la recta','Nivel 1 · Lee la recta','Nivel 2 · Traduce a desigualdad','Nivel 2 · Traduce a desigualdad','Nivel 2 · Traduce a desigualdad','Nivel 3 · ¿Pertenece o no?','Nivel 3 · ¿Pertenece o no?','Nivel 4 · En la finca','Nivel 4 · En la finca','Nivel 5 · Rumbo a las inecuaciones','Nivel 5 · Rumbo a las inecuaciones'];
+function gen(i){let q={};
+if(i<3){const v=fin();q.v=v;q.txt='¿Qué intervalo está marcado en la recta?';q.svg=line(v);Object.assign(q,opts(v,nt))}
+else if(i<6){const v=fin();q.v=v;q.txt=`Escribe como desigualdad el intervalo ${nt(v)}`;Object.assign(q,opts(v,iq))}
+else if(i<8){const v=i==6?fin():ray(),e=v.a===null?[v.b,v.b-1,v.b+1]:v.b===null?[v.a,v.a-1,v.a+1]:[v.a,v.b,v.a+1,v.b-1,v.a-1,v.b+1],n=e[R(0,e.length-1)];
+const m=(v.a===null||(v.lc?n>=v.a:n>v.a))&&(v.b===null||(v.rc?n<=v.b:n<v.b));
+q.v=v;q.txt=`¿Es verdad que ${f(n)} ∈ ${nt(v)}?`;q.o=['Verdadero','Falso'];q.t=m?'Verdadero':'Falso';q.fixed=1;q.extra=`${f(n)} ${m?'sí':'no'} cumple ${iq(v)}.`}
+else{const v=i<10?fin():ray(),n=NOUN[R(0,3)];q.v=v;q.txt=`${n[0]} (${n[1]}): los valores buenos son ${words(v)}. ¿Qué intervalo la representa?`;Object.assign(q,opts(v,nt))}
+return q}
+let S;
+const app=document.getElementById('app');
+function intro(){app.innerHTML=`<h1>La ruta de la cosecha</h1><p>Recorre 12 estaciones de la finca y practica intervalos. Si el círculo está lleno, el número <b>sí</b> entra. Si está vacío, <b>no</b> entra.</p>
+<div class="card"><details open><summary>Recuerda antes de jugar</summary><p>( ) paréntesis: no incluye el extremo → círculo vacío, signo &lt; o &gt;.<br>[ ] corchete: sí incluye el extremo → círculo lleno, signo ≤ o ≥.<br>∞ nunca se incluye: siempre lleva paréntesis.</p></details></div>
+<button class="go" id="st">Empezar la ruta</button>`;document.getElementById('st').onclick=()=>{S={i:0,pts:0,ok:0,st:0};next()}}
+function next(){if(S.i>=12)return end();S.q=gen(S.i);S.done=false;draw()}
+function draw(){const q=S.q;
+app.innerHTML=`<div class="row"><span>${LV[S.i]}</span><span>${S.pts} pts</span></div><div class="bar"><i style="width:${S.i/12*100}%"></i></div>
+<div class="card"><h2>Estación ${S.i+1} de 12</h2><p>${q.txt}</p>${q.svg||''}<div id="ops">${q.o.map((t,k)=>`<button class="opt" data-k="${k}">${t}</button>`).join('')}</div><div id="fb"></div></div>
+<details><summary>Ver recordatorio</summary><p>( ) no incluye · [ ] sí incluye · ∞ siempre con paréntesis</p></details>`;
+document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>ans(b))}
+function ans(b){if(S.done)return;S.done=true;const q=S.q,t=q.o[+b.dataset.k],good=t===q.t;
+document.querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(x.textContent===q.t)x.classList.add('ok')});
+let msg;
+if(good){S.ok++;S.st++;const bonus=S.st>=3?5:0;S.pts+=10+bonus;msg=`¡Correcto! +10${bonus?' y +5 de racha':''}.`}else{b.classList.add('bad');S.st=0;msg='Casi. Revisa los extremos.'}
+document.getElementById('fb').innerHTML=`<div class="fb"><b>${msg}</b><br>${nt(q.v)} significa ${iq(q.v)}.${q.extra?'<br>'+q.extra:''}</div><button class="go" id="nx">${S.i==11?'Ver mi resultado':'Siguiente estación'}</button>`;
+document.getElementById('nx').onclick=()=>{S.i++;next()}}
+function end(){const st=S.ok>=10?'⭐⭐⭐':S.ok>=7?'⭐⭐':'⭐';
+app.innerHTML=`<h1>¡Llegaste a la cosecha!</h1><div class="card"><div class="big">${st}</div><p style="text-align:center">${S.ok} de 12 correctas · ${S.pts} puntos</p>
+<label for="nm">Escribe tu nombre para tu comprobante:</label><input id="nm" autocomplete="off" maxlength="40"><div class="code" id="cd"></div>
+<p>Toma una captura y envíala por WhatsApp o Classroom.</p></div><button class="go" id="again">Jugar otra vez (salen preguntas nuevas)</button>`;
+const up=()=>{document.getElementById('cd').textContent=`Reto Intervalos · ${document.getElementById('nm').value||'(tu nombre)'} · ${S.ok}/12 · ${S.pts} pts`};
+document.getElementById('nm').oninput=up;up();document.getElementById('again').onclick=()=>{S={i:0,pts:0,ok:0,st:0};next()}}
+intro();
+</script>
+</body>
+</html>
